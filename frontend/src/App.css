@@ -1,0 +1,460 @@
+/* Modern Animated Pantry Theme */
+.app {
+  position: relative;
+  height: 100vh;
+  background: linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 25%, #A5D6A7 50%, #81C784 75%, #66BB6A 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+}
+
+/* Animated Background Elements */
+.app::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="30">🥕</text></svg>'),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="25">🥬</text></svg>'),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="28">🍅</text></svg>'),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="22">🥒</text></svg>'),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="26">🥔</text></svg>'),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="24">🌽</text></svg>');
+  background-position: 
+    10% 20%, 85% 10%, 20% 80%, 90% 70%, 15% 45%, 80% 40%;
+  background-size: 60px 60px, 50px 50px, 65px 65px, 45px 45px, 55px 55px, 58px 58px;
+  background-repeat: no-repeat;
+  animation: floatVeggies 20s ease-in-out infinite;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.app::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="20">🍄</text></svg>'),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="23">🥦</text></svg>'),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="21">🧄</text></svg>'),
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="19">🌶️</text></svg>');
+  background-position: 
+    70% 25%, 25% 60%, 75% 85%, 40% 15%;
+  background-size: 40px 40px, 48px 48px, 42px 42px, 38px 38px;
+  background-repeat: no-repeat;
+  animation: floatVeggies 25s ease-in-out infinite reverse;
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes floatVeggies {
+  0%, 100% { 
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  25% { 
+    transform: translate(10px, -15px) rotate(2deg) scale(1.05);
+  }
+  50% { 
+    transform: translate(-5px, 10px) rotate(-1deg) scale(0.95);
+  }
+  75% { 
+    transform: translate(8px, -8px) rotate(1.5deg) scale(1.02);
+  }
+}
+
+/* Floating particles */
+.app-container {
+  max-width: 420px;
+  margin: 0 auto;
+  height: 100vh;
+  position: relative;
+  backdrop-filter: blur(2px);
+  background: linear-gradient(180deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 50%, 
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  box-shadow: inset 0 0 100px rgba(76, 175, 80, 0.1);
+  z-index: 2;
+  overflow: hidden;
+}
+
+/* Animated dots background */
+.app-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(139, 195, 74, 0.4) 2px, transparent 2px),
+    radial-gradient(circle at 75% 75%, rgba(76, 175, 80, 0.3) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(129, 199, 132, 0.2) 1.5px, transparent 1.5px);
+  background-size: 80px 80px, 60px 60px, 40px 40px;
+  animation: movePattern 30s linear infinite;
+  opacity: 0.6;
+  z-index: -1;
+}
+
+@keyframes movePattern {
+  0% { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 80px 80px, -60px 60px, 40px -40px; }
+}
+
+/* Common component styles with enhanced animations */
+.screen-container {
+  padding: 24px;
+  position: relative;
+  z-index: 3;
+  animation: slideInUp 0.6s ease-out;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.card {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95), 
+    rgba(248, 255, 248, 0.9)
+  );
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 
+    0 8px 32px rgba(76, 175, 80, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(139, 195, 74, 0.2);
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateZ(0);
+  max-height: calc(100vh - 100px);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(139, 195, 74, 0.1), 
+    transparent
+  );
+  transition: left 0.6s ease;
+}
+
+.card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 16px 48px rgba(76, 175, 80, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
+.card:hover::before {
+  left: 100%;
+}
+
+.button-primary {
+  background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 50%, #388E3C 100%);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 6px 20px rgba(76, 175, 80, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transform: translateZ(0);
+}
+
+.button-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.button-primary:hover {
+  background: linear-gradient(135deg, #4CAF50 0%, #388E3C 50%, #2E7D32 100%);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 
+    0 12px 30px rgba(76, 175, 80, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.button-primary:hover::before {
+  transform: translateX(100%);
+}
+
+.button-primary:active {
+  transform: translateY(-2px) scale(1.02);
+  transition: all 0.1s ease;
+}
+
+.input-field {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid rgba(139, 195, 74, 0.3);
+  border-radius: 12px;
+  font-size: 16px;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95), 
+    rgba(248, 255, 248, 0.9)
+  );
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  color: #2E7D32;
+  font-weight: 500;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #66BB6A;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 
+    0 0 0 4px rgba(102, 187, 106, 0.15),
+    0 4px 20px rgba(76, 175, 80, 0.2);
+  transform: translateY(-2px);
+}
+
+.input-field::placeholder {
+  color: rgba(46, 125, 50, 0.6);
+  font-weight: 400;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: #1B5E20;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced typography with animations */
+h1, h2, h3 {
+  color: #1B5E20;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: textGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes textGlow {
+  from {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  to {
+    text-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  }
+}
+
+p {
+  color: #2E7D32;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* Enhanced welcome screen with animations */
+.welcome-message {
+  text-align: center;
+  color: #1B5E20;
+  animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.welcome-message h1 {
+  font-size: 32px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #1B5E20, #4CAF50, #66BB6A);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: rainbowText 4s ease-in-out infinite;
+}
+
+@keyframes rainbowText {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.welcome-message p {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #2E7D32;
+  animation: fadeIn 1s ease-out 0.3s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive animations */
+@media (max-width: 480px) {
+  .app::before,
+  .app::after {
+    background-size: 40px 40px, 35px 35px, 45px 45px, 30px 30px, 38px 38px, 42px 42px;
+  }
+  
+  .card {
+    padding: 20px;
+    margin-bottom: 16px;
+    max-height: calc(100vh - 80px);
+  }
+  
+  .button-primary {
+    padding: 14px 28px;
+    font-size: 15px;
+  }
+  
+  .welcome-message h1 {
+    font-size: 28px;
+  }
+  
+  .screen-container {
+    padding: 16px;
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .app::before,
+  .app::after,
+  .app-container::before {
+    animation: none;
+  }
+  
+  .card:hover {
+    transform: none;
+  }
+  
+  .button-primary:hover {
+    transform: none;
+  }
+  
+  h1, h2, h3 {
+    animation: none;
+  }
+}
+
+/* Loading states with animations */
+.loading {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Success states */
+.success {
+  animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+  }
+  70% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+  }
+}
