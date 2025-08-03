@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import './App.css';
 import Login from './components/login';
-
+import Signup from './components/signup';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [currentView, setCurrentView] = useState('login'); // 'login' or 'signup'
 
   const handleLogin = (userData) => {
     setIsAuthenticated(true);
@@ -13,23 +14,42 @@ function App() {
     console.log('User logged in:', userData);
   };
 
+  const handleSignup = (userData) => {
+    setIsAuthenticated(true);
+    setUser(userData);
+    console.log('User signed up:', userData);
+  };
+
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUser(null);
+    setCurrentView('login');
   };
 
-  // If not authenticated, show login page
+  const switchToSignup = () => {
+    setCurrentView('signup');
+  };
+
+  const switchToLogin = () => {
+    setCurrentView('login');
+  };
+
+  // If not authenticated, show login or signup page
   if (!isAuthenticated) {
     return (
       <div className="app">
         <div className="app-container">
-          <Login onLogin={handleLogin} />
+          {currentView === 'login' ? (
+            <Login onLogin={handleLogin} onSwitchToSignup={switchToSignup} />
+          ) : (
+            <Signup onSignup={handleSignup} onSwitchToLogin={switchToLogin} />
+          )}
         </div>
       </div>
     );
   }
 
-  // If authenticated, show a simple welcome screen for now
+  // If authenticated, show welcome screen
   return (
     <div className="app">
       <div className="app-container">
@@ -37,7 +57,7 @@ function App() {
           <div className="card">
             <h1>Welcome to FreshTrack!</h1>
             <p>Hello, {user?.name || user?.email}!</p>
-            <p>You have successfully logged in.</p>
+            <p>You have successfully {user?.firstName ? 'signed up' : 'logged in'}.</p>
             <button className="button-primary" onClick={handleLogout}>
               Logout
             </button>

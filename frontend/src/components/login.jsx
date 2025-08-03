@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import './login.css';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, onSwitchToSignup }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [isSignUp, setIsSignUp] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -63,12 +62,6 @@ const Login = ({ onLogin }) => {
     }, 1500);
   };
 
-  const toggleMode = () => {
-    setIsSignUp(!isSignUp);
-    setFormData({ email: '', password: '' });
-    setErrors({});
-  };
-
   return (
     <div className="login-container">
       <div className="login-header">
@@ -83,8 +76,8 @@ const Login = ({ onLogin }) => {
 
       <div className="login-card">
         <div className="login-form-header">
-          <h2>{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
-          <p>{isSignUp ? 'Sign up to start tracking your pantry' : 'Sign in to your account'}</p>
+          <h2>Welcome Back</h2>
+          <p>Sign in to your account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -118,11 +111,9 @@ const Login = ({ onLogin }) => {
             {errors.password && <span className="error-message">{errors.password}</span>}
           </div>
 
-          {!isSignUp && (
-            <div className="forgot-password">
-              <a href="#" className="forgot-link">Forgot your password?</a>
-            </div>
-          )}
+          <div className="forgot-password">
+            <a href="#" className="forgot-link">Forgot your password?</a>
+          </div>
 
           <button 
             type="submit" 
@@ -132,21 +123,19 @@ const Login = ({ onLogin }) => {
             {isLoading ? (
               <div className="loading-spinner"></div>
             ) : (
-              isSignUp ? 'Create Account' : 'Sign In'
+              'Sign In'
             )}
           </button>
         </form>
 
         <div className="login-footer">
           <p>
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-            <button onClick={toggleMode} className="toggle-btn">
-              {isSignUp ? 'Sign In' : 'Sign Up'}
+            Don't have an account?{' '}
+            <button onClick={onSwitchToSignup} className="toggle-btn">
+              Sign Up
             </button>
           </p>
         </div>
-
-       
       </div>
     </div>
   );
