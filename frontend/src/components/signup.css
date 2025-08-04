@@ -388,13 +388,19 @@
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid rgba(139, 195, 74, 0.2);
+  /* Ensure footer is always visible */
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .signup-footer p {
   color: #4A7C59;
   font-size: 12px;
-  margin: 0;
+  margin: 0 0 4px 0;
   font-weight: 500;
+  line-height: 1.4;
+  /* Improve text wrapping on mobile */
+  word-wrap: break-word;
 }
 
 .toggle-btn {
@@ -406,14 +412,13 @@
   text-decoration: underline;
   font-size: 12px;
   transition: all 0.2s ease;
-  padding: 2px 4px;
+  padding: 4px 8px;
   border-radius: 4px;
-}
-
-.toggle-btn:hover {
-  color: #45a049;
-  background-color: rgba(76, 175, 80, 0.1);
-  text-decoration: none;
+  /* Ensure button is tappable on mobile */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .social-signup {
@@ -562,6 +567,10 @@
 @media (max-width: 480px) {
   .signup-container {
     padding: 12px;
+    /* Ensure container uses full height */
+    min-height: 100vh;
+    justify-content: flex-start;
+    padding-top: 20px;
   }
   
   .app-name {
@@ -578,6 +587,38 @@
     padding: 18px;
     max-width: 100%;
     border-radius: 18px;
+    /* Remove max-height constraint that might cut off footer */
+    max-height: none;
+    /* Ensure card content is fully contained */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .signup-form {
+    /* Allow form to grow but keep footer visible */
+    flex: 1;
+  }
+  
+  .signup-footer {
+    margin-top: 16px;
+    padding-top: 16px;
+    /* Ensure footer stays at bottom but visible */
+    margin-bottom: 0;
+  }
+  
+  .signup-footer p {
+    font-size: 13px;
+    margin-bottom: 6px;
+    /* Better line height for mobile readability */
+    line-height: 1.5;
+  }
+  
+  .toggle-btn {
+    font-size: 13px;
+    padding: 6px 12px;
+    /* Larger touch target for mobile */
+    min-height: 48px;
+    margin-top: 4px;
   }
   
   .name-row {
@@ -602,9 +643,17 @@
 }
 
 @media (max-width: 360px) {
+  .signup-container {
+    padding: 8px;
+    padding-top: 16px;
+  }
+  
   .signup-card {
     padding: 16px;
     border-radius: 16px;
+    /* Ensure card doesn't overflow viewport */
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
   }
   
   .signup-form {
@@ -613,6 +662,20 @@
   
   .signup-form-header {
     margin-bottom: 16px;
+  }
+  
+  .signup-footer {
+    margin-top: 18px;
+    padding-top: 18px;
+  }
+  
+  .signup-footer p {
+    font-size: 12px;
+  }
+  
+  .toggle-btn {
+    font-size: 12px;
+    min-height: 44px;
   }
   
   .app-logo {
@@ -625,10 +688,12 @@
 @media (max-height: 650px) and (orientation: landscape) {
   .signup-container {
     padding: 8px;
+    justify-content: flex-start;
+    padding-top: 10px;
   }
   
   .signup-header {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
   
   .app-logo {
@@ -648,11 +713,32 @@
   
   .signup-card {
     padding: 16px;
-    max-height: 95vh;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
+  }
+  
+  .signup-footer {
+    margin-top: 12px;
+    padding-top: 12px;
   }
   
   .signup-benefits {
     display: none;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 320px) {
+  .signup-footer p {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  
+  .toggle-btn {
+    font-size: 11px;
+    padding: 8px 12px;
+    min-height: 48px;
+    margin-top: 6px;
   }
 }
 
