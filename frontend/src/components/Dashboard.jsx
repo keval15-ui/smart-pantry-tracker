@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ScanItem from './Scanitem';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -45,6 +46,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [filterCategory, setFilterCategory] = useState('All');
   const [sortBy, setSortBy] = useState('expiry');
   const [showProfile, setShowProfile] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   // Calculate dashboard stats
   const expiringItems = pantryItems.filter(item => item.daysUntilExpiry <= 7);
@@ -77,6 +79,11 @@ const Dashboard = ({ user, onLogout }) => {
     ));
   };
 
+  const handleAddItem = (newItem) => {
+    setPantryItems([...pantryItems, newItem]);
+    console.log('New item added:', newItem);
+  };
+
   return (
     <div className="dashboard-container">
       {/* Header */}
@@ -89,7 +96,10 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
 
         <div className="header-actions">
-          <button className="action-btn primary">
+          <button 
+            className="action-btn primary"
+            onClick={() => setShowScanner(true)}
+          >
             <span className="btn-icon">📱</span>
             Scan Item
           </button>
@@ -312,6 +322,14 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
         </div>
       </div>
+
+      {/* Scanner Modal */}
+      {showScanner && (
+        <ScanItem 
+          onAddItem={handleAddItem}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </div>
   );
 };
