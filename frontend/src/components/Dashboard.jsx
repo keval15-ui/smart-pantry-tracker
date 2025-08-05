@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ScanItem from './Scanitem';
 import Profile from './Profile';
-import View from './view';
+import Expir from './expire';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -73,6 +73,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [showScanner, setShowScanner] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showView, setShowView] = useState(false);
+  const [showExpiring, setShowExpiring] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
   
   // Enhanced shopping list states
@@ -282,19 +283,6 @@ const Dashboard = ({ user, onLogout }) => {
     return { total, completed, remaining, highPriority };
   };
 
-  // If showing view page, render it
-  if (showView) {
-    return (
-      <View 
-        pantryItems={pantryItems}
-        onUpdateItem={handleUpdateItem}
-        onDeleteItem={handleDeleteItem}
-        onAddToShoppingList={addToShoppingList}
-        onClose={() => setShowView(false)}
-      />
-    );
-  }
-
   const shoppingStats = getShoppingStats();
 
   return (
@@ -318,7 +306,7 @@ const Dashboard = ({ user, onLogout }) => {
           </button>
           <button 
             className="action-btn secondary"
-            onClick={() => setShowView(true)}
+            onClick={() => setShowExpiring(true)}
           >
             <span className="btn-icon">⚠️</span>
             View Expiring
@@ -378,12 +366,15 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
         </div>
 
-        <div className="summary-card success">
-          <div className="card-icon">💰</div>
+        <div className="summary-card alert">
+          <div className="card-icon">⏰</div>
           <div className="card-content">
-            <h3>${moneySaved}</h3>
-            <p>Money Saved</p>
+            <h3>{expiringItems.length}</h3>
+            <p>Expiring Soon</p>
           </div>
+          <button className="card-action" onClick={() => setShowExpiring(true)}>
+            View Expiring
+          </button>
         </div>
       </div>
 
@@ -707,6 +698,14 @@ const Dashboard = ({ user, onLogout }) => {
           user={currentUser}
           onClose={() => setShowProfileModal(false)}
           onUpdateUser={handleUpdateUser}
+        />
+      )}
+
+      {/* Expiring Items View */}
+      {showExpiring && (
+        <Expir
+          pantryItems={pantryItems}
+          onClose={() => setShowExpiring(false)}
         />
       )}
     </div>
