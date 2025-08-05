@@ -17,6 +17,8 @@ const ScanItem = ({ onAddItem, onClose }) => {
   const [errors, setErrors] = useState({});
   const [isManualEntry, setIsManualEntry] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
+  const [hasCamera, setHasCamera] = useState(true);
   const scannerRef = useRef(null);
   const html5QrcodeScannerRef = useRef(null);
 
@@ -26,6 +28,7 @@ const ScanItem = ({ onAddItem, onClose }) => {
   ];
 
   useEffect(() => {
+    checkCameraAvailability();
     return () => {
       // Cleanup scanner when component unmounts
       if (html5QrcodeScannerRef.current) {
@@ -33,6 +36,18 @@ const ScanItem = ({ onAddItem, onClose }) => {
       }
     };
   }, []);
+
+  const checkCameraAvailability = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      setHasCamera(true);
+    } catch (error) {
+      console.error('Camera not available:', error);
+      setHasCamera(false);
+      setCameraError(true);
+    }
+  };
 
   const startScanning = () => {
     setIsScanning(true);
@@ -76,6 +91,10 @@ const ScanItem = ({ onAddItem, onClose }) => {
   const onScanFailure = (error) => {
     // Handle scan failure silently or show minimal error
     console.log(`Scan failed: ${error}`);
+    if (error.includes('NotFoundError') || error.includes('camera')) {
+      setCameraError(true);
+      setHasCamera(false);
+    }
   };
 
   const fetchProductData = async (barcode) => {
@@ -216,6 +235,15 @@ const ScanItem = ({ onAddItem, onClose }) => {
         </div>
 
         <div className="scan-content">
+          {cameraError && (
+            <div className="error-message">
+              <p>Camera access is denied or not available. Please check your camera settings.</p>
+              <button className="btn-primary" onClick={checkCameraAvailability}>
+                Retry
+              </button>
+            </div>
+          )}
+
           {!scanResult && !isManualEntry && (
             <div className="scan-options">
               <div className="scan-method-card">
@@ -225,7 +253,7 @@ const ScanItem = ({ onAddItem, onClose }) => {
                 <button 
                   className="method-btn primary" 
                   onClick={startScanning}
-                  disabled={isScanning}
+                  disabled={isScanning || cameraError}
                 >
                   {isScanning ? 'Scanning...' : 'Start Scanner'}
                 </button>

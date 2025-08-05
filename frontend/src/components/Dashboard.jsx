@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ScanItem from './Scanitem';
+import Profile from './Profile';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -47,6 +48,8 @@ const Dashboard = ({ user, onLogout }) => {
   const [sortBy, setSortBy] = useState('expiry');
   const [showProfile, setShowProfile] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(user);
 
   // Calculate dashboard stats
   const expiringItems = pantryItems.filter(item => item.daysUntilExpiry <= 7);
@@ -84,6 +87,11 @@ const Dashboard = ({ user, onLogout }) => {
     console.log('New item added:', newItem);
   };
 
+  const handleUpdateUser = (updatedUser) => {
+    setCurrentUser(updatedUser);
+    console.log('User updated:', updatedUser);
+  };
+
   return (
     <div className="dashboard-container">
       {/* Header */}
@@ -110,15 +118,27 @@ const Dashboard = ({ user, onLogout }) => {
           
           <div className="user-profile" onClick={() => setShowProfile(!showProfile)}>
             <div className="avatar">
-              {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+              {currentUser?.profileImage ? (
+                <img src={currentUser.profileImage} alt="Profile" className="avatar-img" />
+              ) : (
+                currentUser?.name?.charAt(0) || currentUser?.email?.charAt(0) || 'U'
+              )}
             </div>
-            <span className="user-name">{user?.name || user?.email}</span>
+            <span className="user-name">{currentUser?.name || currentUser?.email}</span>
             <span className="dropdown-arrow">▼</span>
             
             {showProfile && (
               <div className="profile-dropdown">
                 <button className="dropdown-item">Settings</button>
-                <button className="dropdown-item">Profile</button>
+                <button 
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowProfileModal(true);
+                    setShowProfile(false);
+                  }}
+                >
+                  Profile
+                </button>
                 <hr className="dropdown-divider" />
                 <button className="dropdown-item logout" onClick={onLogout}>
                   Logout
@@ -328,6 +348,15 @@ const Dashboard = ({ user, onLogout }) => {
         <ScanItem 
           onAddItem={handleAddItem}
           onClose={() => setShowScanner(false)}
+        />
+      )}
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <Profile 
+          user={currentUser}
+          onClose={() => setShowProfileModal(false)}
+          onUpdateUser={handleUpdateUser}
         />
       )}
     </div>
