@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ScanItem from './Scanitem';
 import Profile from './Profile';
+import View from './view';
 import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
@@ -11,7 +12,8 @@ const Dashboard = ({ user, onLogout }) => {
       quantity: 1,
       expiryDate: '2024-01-15',
       category: 'Dairy',
-      daysUntilExpiry: 2
+      daysUntilExpiry: 2,
+      location: 'Refrigerator'
     },
     {
       id: 2,
@@ -19,7 +21,8 @@ const Dashboard = ({ user, onLogout }) => {
       quantity: 1,
       expiryDate: '2024-01-18',
       category: 'Bakery',
-      daysUntilExpiry: 5
+      daysUntilExpiry: 5,
+      location: 'Pantry'
     },
     {
       id: 3,
@@ -27,7 +30,8 @@ const Dashboard = ({ user, onLogout }) => {
       quantity: 3,
       expiryDate: '2024-01-20',
       category: 'Produce',
-      daysUntilExpiry: 7
+      daysUntilExpiry: 7,
+      location: 'Refrigerator'
     },
     {
       id: 4,
@@ -35,13 +39,32 @@ const Dashboard = ({ user, onLogout }) => {
       quantity: 2,
       expiryDate: '2024-06-15',
       category: 'Canned',
-      daysUntilExpiry: 150
+      daysUntilExpiry: 150,
+      location: 'Pantry'
+    },
+    {
+      id: 5,
+      name: 'Yogurt',
+      quantity: 2,
+      expiryDate: '2024-01-12',
+      category: 'Dairy',
+      daysUntilExpiry: -1,
+      location: 'Refrigerator'
+    },
+    {
+      id: 6,
+      name: 'Bananas',
+      quantity: 5,
+      expiryDate: '2024-01-14',
+      category: 'Produce',
+      daysUntilExpiry: 1,
+      location: 'Counter'
     }
   ]);
 
   const [shoppingList, setShoppingList] = useState([
-    { id: 1, item: 'Milk', checked: false },
-    { id: 2, item: 'Eggs', checked: false }
+    { id: 1, item: 'Milk', checked: false, category: 'Dairy', priority: 'normal', dateAdded: new Date().toISOString() },
+    { id: 2, item: 'Eggs', checked: false, category: 'Dairy', priority: 'normal', dateAdded: new Date().toISOString() }
   ]);
 
   const [filterCategory, setFilterCategory] = useState('All');
@@ -49,15 +72,47 @@ const Dashboard = ({ user, onLogout }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showView, setShowView] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
+  
+  // Enhanced shopping list states
+  const [newShoppingItem, setNewShoppingItem] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('Other');
+  const [newItemPriority, setNewItemPriority] = useState('normal');
+  const [searchShoppingList, setSearchShoppingList] = useState('');
+  const [shoppingFilter, setShoppingFilter] = useState('All');
+  const [showAdvancedList, setShowAdvancedList] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState(null);
+  const [editText, setEditText] = useState('');
 
   // Calculate dashboard stats
   const expiringItems = pantryItems.filter(item => item.daysUntilExpiry <= 7);
   const lowStockItems = pantryItems.filter(item => item.quantity <= 2);
   const totalItems = pantryItems.length;
-  const moneySaved = 25; // Mock data
+  const moneySaved = 25;
 
   const categories = ['All', ...new Set(pantryItems.map(item => item.category))];
+  
+  const shoppingCategories = [
+    'All', 'Produce', 'Dairy', 'Meat & Seafood', 'Bakery', 
+    'Frozen', 'Pantry', 'Beverages', 'Snacks', 'Health & Beauty', 
+    'Household', 'Other'
+  ];
+
+  const priorities = [
+    { value: 'high', label: 'High Priority', icon: '🔴' },
+    { value: 'normal', label: 'Normal', icon: '🟡' },
+    { value: 'low', label: 'Low Priority', icon: '🟢' }
+  ];
+
+  const suggestedItems = [
+    { name: 'Milk', category: 'Dairy' },
+    { name: 'Bread', category: 'Bakery' },
+    { name: 'Eggs', category: 'Dairy' },
+    { name: 'Bananas', category: 'Produce' },
+    { name: 'Chicken Breast', category: 'Meat & Seafood' },
+    { name: 'Rice', category: 'Pantry' }
+  ];
 
   const filteredItems = pantryItems
     .filter(item => filterCategory === 'All' || item.category === filterCategory)
@@ -67,20 +122,17 @@ const Dashboard = ({ user, onLogout }) => {
       return a.name.localeCompare(b.name);
     });
 
-  const addToShoppingList = (itemName) => {
-    const newItem = {
-      id: Date.now(),
-      item: itemName,
-      checked: false
-    };
-    setShoppingList([...shoppingList, newItem]);
-  };
-
-  const toggleShoppingItem = (id) => {
-    setShoppingList(shoppingList.map(item => 
-      item.id === id ? { ...item, checked: !item.checked } : item
-    ));
-  };
+  // Filter shopping list
+  const filteredShoppingList = shoppingList
+    .filter(item => {
+      const matchesCategory = shoppingFilter === 'All' || item.category === shoppingFilter;
+      const matchesSearch = item.item.toLowerCase().includes(searchShoppingList.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => {
+      const priorityOrder = { 'high': 3, 'normal': 2, 'low': 1 };
+      return (priorityOrder[b.priority] || 2) - (priorityOrder[a.priority] || 2);
+    });
 
   const handleAddItem = (newItem) => {
     setPantryItems([...pantryItems, newItem]);
@@ -92,9 +144,162 @@ const Dashboard = ({ user, onLogout }) => {
     console.log('User updated:', updatedUser);
   };
 
+  const handleUpdateItem = (itemId) => {
+    console.log('Update item:', itemId);
+  };
+
+  const handleDeleteItem = (itemId) => {
+    if (window.confirm('Are you sure you want to delete this item?')) {
+      setPantryItems(pantryItems.filter(item => item.id !== itemId));
+    }
+  };
+
+  const addToShoppingList = (itemName) => {
+    // Check if item already exists
+    const exists = shoppingList.some(item => 
+      item.item.toLowerCase() === itemName.toLowerCase()
+    );
+    
+    if (exists) {
+      alert('Item already in shopping list!');
+      return;
+    }
+
+    const newItem = {
+      id: Date.now(),
+      item: itemName,
+      category: 'Other',
+      priority: 'normal',
+      checked: false,
+      dateAdded: new Date().toISOString()
+    };
+    setShoppingList([...shoppingList, newItem]);
+  };
+
+  const handleAddShoppingItem = () => {
+    if (!newShoppingItem.trim()) return;
+
+    // Check if item already exists
+    const exists = shoppingList.some(item => 
+      item.item.toLowerCase() === newShoppingItem.trim().toLowerCase()
+    );
+    
+    if (exists) {
+      alert('Item already in your list!');
+      return;
+    }
+
+    const newItem = {
+      id: Date.now(),
+      item: newShoppingItem.trim(),
+      category: newItemCategory,
+      priority: newItemPriority,
+      checked: false,
+      dateAdded: new Date().toISOString()
+    };
+
+    setShoppingList([...shoppingList, newItem]);
+    setNewShoppingItem('');
+    setNewItemCategory('Other');
+    setNewItemPriority('normal');
+  };
+
+  const handleQuickAdd = (suggestedItem) => {
+    const exists = shoppingList.some(item => 
+      item.item.toLowerCase() === suggestedItem.name.toLowerCase()
+    );
+    
+    if (exists) {
+      alert('Item already in your list!');
+      return;
+    }
+
+    const item = {
+      id: Date.now(),
+      item: suggestedItem.name,
+      category: suggestedItem.category,
+      priority: 'normal',
+      checked: false,
+      dateAdded: new Date().toISOString()
+    };
+
+    setShoppingList([...shoppingList, item]);
+  };
+
+  const toggleShoppingItem = (id) => {
+    setShoppingList(shoppingList.map(item => 
+      item.id === id ? { ...item, checked: !item.checked } : item
+    ));
+  };
+
+  const handleDeleteShoppingItem = (itemId) => {
+    setShoppingList(shoppingList.filter(item => item.id !== itemId));
+  };
+
+  const handleEditShoppingItem = (item) => {
+    setItemToEdit(item.id);
+    setEditText(item.item);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editText.trim()) return;
+
+    setShoppingList(shoppingList.map(item =>
+      item.id === itemToEdit ? { ...item, item: editText.trim() } : item
+    ));
+    setItemToEdit(null);
+    setEditText('');
+  };
+
+  const handleCancelEdit = () => {
+    setItemToEdit(null);
+    setEditText('');
+  };
+
+  const handleClearCompleted = () => {
+    const completedCount = shoppingList.filter(item => item.checked).length;
+    if (completedCount === 0) {
+      alert('No completed items to clear!');
+      return;
+    }
+    
+    if (window.confirm(`Remove ${completedCount} completed items?`)) {
+      setShoppingList(shoppingList.filter(item => !item.checked));
+    }
+  };
+
+  const getPriorityIcon = (priority) => {
+    const priorityConfig = priorities.find(p => p.value === priority);
+    return priorityConfig ? priorityConfig.icon : '🟡';
+  };
+
+  const getShoppingStats = () => {
+    const total = shoppingList.length;
+    const completed = shoppingList.filter(item => item.checked).length;
+    const remaining = total - completed;
+    const highPriority = shoppingList.filter(item => item.priority === 'high' && !item.checked).length;
+    
+    return { total, completed, remaining, highPriority };
+  };
+
+  // If showing view page, render it
+  if (showView) {
+    return (
+      <View 
+        pantryItems={pantryItems}
+        onUpdateItem={handleUpdateItem}
+        onDeleteItem={handleDeleteItem}
+        onAddToShoppingList={addToShoppingList}
+        onClose={() => setShowView(false)}
+      />
+    );
+  }
+
+  const shoppingStats = getShoppingStats();
+
   return (
     <div className="dashboard-container">
-      {/* Header */}
+      {/* Header - Removed Manage List button */}
       <header className="dashboard-header">
         <div className="header-left">
           <div className="app-logo-small">
@@ -111,9 +316,12 @@ const Dashboard = ({ user, onLogout }) => {
             <span className="btn-icon">📱</span>
             Scan Item
           </button>
-          <button className="action-btn secondary">
-            <span className="btn-icon">🎤</span>
-            Voice Search
+          <button 
+            className="action-btn secondary"
+            onClick={() => setShowView(true)}
+          >
+            <span className="btn-icon">⚠️</span>
+            View Expiring
           </button>
           
           <div className="user-profile" onClick={() => setShowProfile(!showProfile)}>
@@ -129,7 +337,6 @@ const Dashboard = ({ user, onLogout }) => {
             
             {showProfile && (
               <div className="profile-dropdown">
-                <button className="dropdown-item">Settings</button>
                 <button 
                   className="dropdown-item"
                   onClick={() => {
@@ -139,6 +346,7 @@ const Dashboard = ({ user, onLogout }) => {
                 >
                   Profile
                 </button>
+                <button className="dropdown-item">Settings</button>
                 <hr className="dropdown-divider" />
                 <button className="dropdown-item logout" onClick={onLogout}>
                   Logout
@@ -151,17 +359,6 @@ const Dashboard = ({ user, onLogout }) => {
 
       {/* Summary Cards */}
       <div className="summary-cards">
-        <div className="summary-card alert">
-          <div className="card-icon">⚠️</div>
-          <div className="card-content">
-            <h3>{expiringItems.length}</h3>
-            <p>Items Expiring Soon</p>
-          </div>
-          <button className="card-action" onClick={() => setFilterCategory('All')}>
-            View All
-          </button>
-        </div>
-
         <div className="summary-card warning">
           <div className="card-icon">📦</div>
           <div className="card-content">
@@ -298,45 +495,198 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
         </div>
 
-        {/* Shopping List Sidebar */}
+        {/* Enhanced Shopping List Sidebar */}
         <div className="shopping-sidebar">
           <div className="shopping-list-card">
             <div className="list-header">
-              <h3>Shopping List</h3>
-              <button className="share-btn">Share</button>
+              <h3>🛒 Shopping List ({shoppingStats.total})</h3>
+              <button 
+                className="toggle-advanced-btn"
+                onClick={() => setShowAdvancedList(!showAdvancedList)}
+              >
+                {showAdvancedList ? 'Simple' : 'Advanced'}
+              </button>
             </div>
 
-            <div className="add-item-form">
-              <input 
-                type="text" 
-                placeholder="Add item to list..."
-                className="add-item-input"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && e.target.value.trim()) {
-                    addToShoppingList(e.target.value.trim());
-                    e.target.value = '';
-                  }
-                }}
-              />
-              <button className="add-btn">+</button>
+            {/* Stats Mini Cards */}
+            <div className="shopping-stats">
+              <div className="mini-stat">
+                <span className="mini-number">{shoppingStats.remaining}</span>
+                <span className="mini-label">Remaining</span>
+              </div>
+              <div className="mini-stat">
+                <span className="mini-number">{shoppingStats.completed}</span>
+                <span className="mini-label">Done</span>
+              </div>
+              <div className="mini-stat">
+                <span className="mini-number">{shoppingStats.highPriority}</span>
+                <span className="mini-label">Priority</span>
+              </div>
             </div>
 
-            <div className="shopping-items">
-              {shoppingList.map(item => (
-                <div key={item.id} className={`shopping-item ${item.checked ? 'checked' : ''}`}>
-                  <input 
-                    type="checkbox" 
-                    checked={item.checked}
-                    onChange={() => toggleShoppingItem(item.id)}
-                  />
-                  <span className="item-text">{item.item}</span>
-                  <button className="remove-item">×</button>
+            {/* Enhanced Add Item Form */}
+            <div className="enhanced-add-form">
+              <div className="main-add-input">
+                <input 
+                  type="text" 
+                  placeholder="Add item to shopping list..."
+                  className="add-item-input"
+                  value={newShoppingItem}
+                  onChange={(e) => setNewShoppingItem(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddShoppingItem()}
+                />
+                <button 
+                  className="add-btn" 
+                  onClick={handleAddShoppingItem}
+                  disabled={!newShoppingItem.trim()}
+                >
+                  +
+                </button>
+              </div>
+
+              {showAdvancedList && (
+                <div className="advanced-controls">
+                  <select
+                    value={newItemCategory}
+                    onChange={(e) => setNewItemCategory(e.target.value)}
+                    className="mini-select"
+                  >
+                    {shoppingCategories.filter(cat => cat !== 'All').map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={newItemPriority}
+                    onChange={(e) => setNewItemPriority(e.target.value)}
+                    className="mini-select"
+                  >
+                    {priorities.map(p => (
+                      <option key={p.value} value={p.value}>
+                        {p.icon} {p.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ))}
+              )}
             </div>
 
+            {/* Quick Add Suggestions */}
+            {showAdvancedList && (
+              <div className="quick-suggestions">
+                <div className="suggestions-label">Quick Add:</div>
+                <div className="suggestions-pills">
+                  {suggestedItems.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleQuickAdd(item)}
+                      className="suggestion-pill"
+                    >
+                      + {item.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Advanced Filters */}
+            {showAdvancedList && (
+              <div className="shopping-filters">
+                <input
+                  type="text"
+                  placeholder="Search list..."
+                  value={searchShoppingList}
+                  onChange={(e) => setSearchShoppingList(e.target.value)}
+                  className="search-mini"
+                />
+                <select
+                  value={shoppingFilter}
+                  onChange={(e) => setShoppingFilter(e.target.value)}
+                  className="filter-mini"
+                >
+                  {shoppingCategories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Shopping Items */}
+            <div className="shopping-items">
+              {filteredShoppingList.length === 0 ? (
+                <div className="empty-shopping">
+                  <div className="empty-icon">📝</div>
+                  <p>Your shopping list is empty!</p>
+                  <p>Add items above to get started.</p>
+                </div>
+              ) : (
+                filteredShoppingList.map(item => (
+                  <div key={item.id} className={`shopping-item ${item.checked ? 'checked' : ''}`}>
+                    <input 
+                      type="checkbox" 
+                      checked={item.checked}
+                      onChange={() => toggleShoppingItem(item.id)}
+                    />
+                    
+                    <div className="item-content-shopping">
+                      {itemToEdit === item.id ? (
+                        <div className="edit-form-mini">
+                          <input
+                            type="text"
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            className="edit-input-mini"
+                            autoFocus
+                            onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                            onBlur={handleSaveEdit}
+                          />
+                          <div className="edit-actions-mini">
+                            <button onClick={handleSaveEdit} className="save-mini">✓</button>
+                            <button onClick={handleCancelEdit} className="cancel-mini">✕</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="item-text">{item.item}</span>
+                          {showAdvancedList && (
+                            <div className="item-meta">
+                              <span className="item-category-mini">{item.category}</span>
+                              <span className="item-priority-mini">{getPriorityIcon(item.priority)}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    
+                    <div className="item-actions-mini">
+                      {showAdvancedList && (
+                        <button 
+                          className="edit-mini-btn"
+                          onClick={() => handleEditShoppingItem(item)}
+                        >
+                          ✏️
+                        </button>
+                      )}
+                      <button 
+                        className="remove-item"
+                        onClick={() => handleDeleteShoppingItem(item.id)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* List Actions */}
             <div className="list-actions">
-              <button className="clear-checked">Clear Completed</button>
+              <button 
+                className="clear-completed"
+                onClick={handleClearCompleted}
+                disabled={shoppingStats.completed === 0}
+              >
+                Clear Completed ({shoppingStats.completed})
+              </button>
               <button className="export-list">Export List</button>
             </div>
           </div>
