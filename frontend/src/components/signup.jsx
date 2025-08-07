@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import './signup.css';
+import { auth } from './firebase'; // Make sure the path is correct
+import { db } from './firebase'; // adjust the path if needed
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 const Signup = ({ onSignup, onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
@@ -69,16 +73,36 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      onSignup({
-        email: formData.email,
-        name: `${formData.firstName} ${formData.lastName}`,
-        firstName: formData.firstName,
-        lastName: formData.lastName
+    const { firstName, lastName, email, password } = formData;
+
+    try {
+      // Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Firestore user document
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        firstName,
+        lastName,
+        email,
+        createdAt: new Date()
       });
-    }, 1500);
+
+      setIsLoading(false);
+      alert('Signup successful!');
+      if (onSignup) {
+        onSignup({
+          email,
+          name: `${firstName} ${lastName}`,
+          firstName,
+          lastName
+        });
+      }
+    } catch (error) {
+      setIsLoading(false);
+      alert(error.message);
+    }
   };
 
   return (

@@ -85,6 +85,7 @@ const Dashboard = ({ user, onLogout }) => {
   const [showAdvancedList, setShowAdvancedList] = useState(false);
   const [itemToEdit, setItemToEdit] = useState(null);
   const [editText, setEditText] = useState('');
+  const [showDonation, setShowDonation] = useState(false);
 
   // Calculate dashboard stats
   const expiringItems = pantryItems.filter(item => item.daysUntilExpiry <= 7);
@@ -287,7 +288,7 @@ const Dashboard = ({ user, onLogout }) => {
 
   return (
     <div className="dashboard-container">
-      {/* Header - Removed Manage List button */}
+      {/* Header - Removed View Expiring button, Added Donation button */}
       <header className="dashboard-header">
         <div className="header-left">
           <div className="app-logo-small">
@@ -302,14 +303,16 @@ const Dashboard = ({ user, onLogout }) => {
             onClick={() => setShowScanner(true)}
           >
             <span className="btn-icon">📱</span>
-            Scan Item
+            Add Item List
           </button>
+          
+          {/* NEW: Donation Button */}
           <button 
-            className="action-btn secondary"
-            onClick={() => setShowExpiring(true)}
+            className="action-btn tertiary"
+            onClick={() => setShowDonation(true)}
           >
-            <span className="btn-icon">⚠️</span>
-            View Expiring
+            <span className="btn-icon">🤝</span>
+            Donate Items
           </button>
           
           <div className="user-profile" onClick={() => setShowProfile(!showProfile)}>
@@ -345,7 +348,7 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       </header>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Keep the "View Expiring" button here */}
       <div className="summary-cards">
         <div className="summary-card warning">
           <div className="card-icon">📦</div>
@@ -690,6 +693,49 @@ const Dashboard = ({ user, onLogout }) => {
           onAddItem={handleAddItem}
           onClose={() => setShowScanner(false)}
         />
+      )}
+
+      {/* NEW: Donation Modal */}
+      {showDonation && (
+        <div className="donation-overlay">
+          <div className="donation-modal">
+            <div className="donation-header">
+              <h2>🤝 Donate Items</h2>
+              <button className="close-btn" onClick={() => setShowDonation(false)}>×</button>
+            </div>
+            <div className="donation-content">
+              <p>Help reduce food waste by donating items that are still good but you won't use.</p>
+              
+              {/* Show expiring items available for donation */}
+              <div className="donation-items">
+                <h3>Items Available for Donation:</h3>
+                {expiringItems.length > 0 ? (
+                  <div className="donation-list">
+                    {expiringItems.map(item => (
+                      <div key={item.id} className="donation-item">
+                        <span className="item-name">{item.name}</span>
+                        <span className="item-expiry">Expires: {item.expiryDate}</span>
+                        <button className="donate-btn">Donate</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No items currently available for donation.</p>
+                )}
+              </div>
+              
+              <div className="donation-info">
+                <h3>Benefits of Donating:</h3>
+                <ul>
+                  <li>🌱 Reduce food waste</li>
+                  <li>🤝 Help your community</li>
+                  <li>📊 Track your impact</li>
+                  <li>🏆 Earn sustainability points</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Profile Modal */}

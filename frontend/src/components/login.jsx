@@ -1,65 +1,36 @@
 import React, { useState } from 'react';
 import './login.css';
+import { auth } from './firebase'; // Make sure path is correct
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const Login = ({ onLogin, onSwitchToSignup }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [errors, setErrors] = useState({});
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
     setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
       setIsLoading(false);
       onLogin({
-        email: formData.email,
-        name: formData.email.split('@')[0]
+        email: user.email,
+        uid: user.uid
       });
-    }, 1500);
+    } catch (err) {
+      setIsLoading(false);
+      setError('Invalid email or password');
+    }
   };
 
   return (
@@ -89,11 +60,10 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className={`input-field ${errors.email ? 'error' : ''}`}
+              className={`input-field ${error ? 'error' : ''}`}
               placeholder="Enter your email"
               disabled={isLoading}
             />
-            {errors.email && <span className="error-message">{errors.email}</span>}
           </div>
 
           <div className="form-group">
@@ -104,12 +74,13 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              className={`input-field ${errors.password ? 'error' : ''}`}
+              className={`input-field ${error ? 'error' : ''}`}
               placeholder="Enter your password"
               disabled={isLoading}
             />
-            {errors.password && <span className="error-message">{errors.password}</span>}
           </div>
+
+          {error && <div className="error-message">{error}</div>}
 
           <div className="forgot-password">
             <a href="#" className="forgot-link">Forgot your password?</a>
