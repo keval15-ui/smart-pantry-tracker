@@ -110,7 +110,7 @@ const Dashboard = ({ user, onLogout }) => {
       <header className="dashboard-header">
         <div className="header-content">
           <div className="header-left">
-            <h1 className="dashboard-title">🥫 Smart Pantry Tracker</h1>
+            <h1 className="dashboard-title"> Smart Pantry Tracker</h1>
             <p className="dashboard-subtitle">
               {getGreeting()}, {user?.name || 'User'}! Keep track of your pantry items.
             </p>
