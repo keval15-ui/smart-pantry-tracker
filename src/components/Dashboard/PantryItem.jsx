@@ -13,9 +13,8 @@ const PantryItem = ({ item, onEdit, onDelete }) => {
   const getExpiryStatus = (expiryDate) => {
     const days = getDaysUntilExpiry(expiryDate);
     if (days < 0) return 'expired';
-    if (days <= 3) return 'critical';
     if (days <= 7) return 'warning';
-    return 'good';
+    return 'fresh';
   };
 
   const formatDate = (dateString) => {
@@ -36,58 +35,49 @@ const PantryItem = ({ item, onEdit, onDelete }) => {
   };
 
   return (
-    <div className={`pantry-item ${getExpiryStatus(item.expiryDate)}`}>
+    <div className="pantry-item">
       <div className="item-header">
-        <div className="item-icon">
-          {item.category === 'Fruits' && '🍎'}
-          {item.category === 'Vegetables' && '🥕'}
-          {item.category === 'Dairy' && '🥛'}
-          {item.category === 'Meat' && '🥩'}
-          {item.category === 'Grains' && '🌾'}
-          {!['Fruits', 'Vegetables', 'Dairy', 'Meat', 'Grains'].includes(item.category) && '📦'}
-        </div>
-        <div className="item-info">
-          <h3 className="item-name">{item.name}</h3>
-          <p className="item-category">{item.category}</p>
-        </div>
-        <div className="item-status">
-          <span className={`status-badge ${getExpiryStatus(item.expiryDate)}`}>
-            {getExpiryText(item.expiryDate)}
-          </span>
-        </div>
+        <h3 className="item-name">{item.name}</h3>
+        <span className="item-category">{item.category}</span>
       </div>
       
       <div className="item-details">
-        <div className="detail-item">
-          <span className="detail-label">Quantity:</span>
-          <span className="detail-value">{item.quantity} {item.unit || 'pcs'}</span>
+        <div className="item-quantity">
+          <span className="quantity-value">{item.quantity} {item.unit || 'pcs'}</span>
         </div>
-        <div className="detail-item">
-          <span className="detail-label">Expires:</span>
-          <span className="detail-value">{formatDate(item.expiryDate)}</span>
-        </div>
+        
         {item.location && (
-          <div className="detail-item">
-            <span className="detail-label">Location:</span>
-            <span className="detail-value">{item.location}</span>
+          <div className="item-location">
+            <span className="location-icon">📍</span>
+            <span>{item.location}</span>
           </div>
         )}
+      </div>
+      
+      <div className="item-expiry">
+        <div className="expiry-info">
+          <span className="expiry-label">Expires:</span>
+          <span className="expiry-date">{formatDate(item.expiryDate)}</span>
+        </div>
+        <span className={`expiry-status ${getExpiryStatus(item.expiryDate)}`}>
+          {getExpiryText(item.expiryDate)}
+        </span>
       </div>
       
       <div className="item-actions">
         <button 
           onClick={() => onEdit(item)} 
-          className="action-btn edit-btn"
-          aria-label="Edit item"
+          className="item-action-btn edit-btn"
+          title="Edit item"
         >
-          ✏️ Edit
+          ✏️
         </button>
         <button 
           onClick={() => onDelete(item.id)} 
-          className="action-btn delete-btn"
-          aria-label="Delete item"
+          className="item-action-btn delete-btn"
+          title="Delete item"
         >
-          🗑️ Delete
+          🗑️
         </button>
       </div>
     </div>
