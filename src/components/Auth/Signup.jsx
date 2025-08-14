@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext.js';
+import { validateEmail, validatePassword, getPasswordStrength } from '../../utils/auth.js';
 import '../../styles/auth.css';
 
-const Signup = ({ onSignup }) => {
+const Signup = () => {
+  const navigate = useNavigate();
+  const { signup } = useAuth();
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -33,35 +38,24 @@ const Signup = ({ onSignup }) => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
     // Clear error when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: ''
-      });
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
     
     // Check password strength
-    if (e.target.name === 'password') {
-      setPasswordStrength(getPasswordStrength(e.target.value));
+    if (name === 'password') {
+      setPasswordStrength(getPasswordStrength(value));
     }
-  };
-
-  const getPasswordStrength = (password) => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/\d/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    
-    if (strength <= 2) return 'weak';
-    if (strength <= 3) return 'medium';
-    return 'strong';
   };
 
   const validateForm = () => {
@@ -75,16 +69,14 @@ const Signup = ({ onSignup }) => {
     
     if (!formData.email) {
       newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
     }
     
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+    } else if (!validatePassword(formData.password)) {
+      newErrors.password = 'Password must be at least 8 characters with uppercase, lowercase, and number';
     }
     
     if (!formData.confirmPassword) {
@@ -102,11 +94,15 @@ const Signup = ({ onSignup }) => {
     
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
+      setErrors({});
+      
       try {
-        console.log('Signup data:', formData);
-        await onSignup(formData);
+        await signup(formData);
+        navigate('/dashboard');
       } catch (error) {
-        setErrors({ general: 'Signup failed. Please try again.' });
+        setErrors({ 
+          general: error.message || 'Signup failed. Please try again.' 
+        });
       } finally {
         setIsLoading(false);
       }
@@ -118,7 +114,9 @@ const Signup = ({ onSignup }) => {
   const nextStep = () => {
     const stepOneErrors = {};
     if (!formData.name) stepOneErrors.name = 'Full name is required';
-    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) stepOneErrors.email = 'Valid email is required';
+    if (!formData.email || !validateEmail(formData.email)) {
+      stepOneErrors.email = 'Valid email is required';
+    }
     
     if (Object.keys(stepOneErrors).length === 0) {
       setStep(2);
@@ -180,7 +178,7 @@ const Signup = ({ onSignup }) => {
             <div className="logo-icon-creative">🥬</div>
           </div>
           <div className="brand-info">
-            <h1 className="brand-name-creative">Smart Pantry</h1>
+            <h1 className="brand-name-creative">FreshTrack</h1>
             <div className="brand-tagline-creative">Join the Kitchen Revolution</div>
           </div>
         </div>
@@ -404,7 +402,7 @@ const Signup = ({ onSignup }) => {
                         </svg>
                       ) : (
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5z"/>
+                          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/>
                         </svg>
                       )}
                     </button>

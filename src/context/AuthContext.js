@@ -1,4 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 const AuthContext = createContext();
 
@@ -15,90 +23,173 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is already logged in on app start
+  // Listen to Firebase auth state changes
   useEffect(() => {
-    const checkAuth = () => {
-      try {
-        const savedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-        
-        if (savedUser && token) {
-          setUser(JSON.parse(savedUser));
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-      } finally {
-        setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in
+        const userData = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+          photoURL: firebaseUser.photoURL,
+          emailVerified: firebaseUser.emailVerified
+        };
+        setUser(userData);
+        setIsAuthenticated(true);
+      } else {
+        // User is signed out
+        setUser(null);
+        setIsAuthenticated(false);
       }
-    };
+      setIsLoading(false);
+    });
 
-    checkAuth();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   const login = async (credentials) => {
     try {
-      // Simulate API call
-      console.log('Logging in with:', credentials);
+      setIsLoading(true);
+      const { email, password } = credentials;
       
-      // Mock authentication - replace with real API call
-      const mockUser = {
-        id: 1,
-        name: 'John Doe',
-        email: credentials.email
+      console.log('🔐 Attempting login for:', email);
+      console.log('🔥 Firebase Auth instance:', !!auth);
+      console.log('🌐 Firebase Config loaded:', !!auth.app);
+      
+      // Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      console.log('✅ Login successful:', {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        emailVerified: firebaseUser.emailVerified
+      });
+      
+      const userData = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+        photoURL: firebaseUser.photoURL,
+        emailVerified: firebaseUser.emailVerified
       };
       
-      const mockToken = 'mock-jwt-token';
-      
-      // Save to localStorage
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('token', mockToken);
-      
-      setUser(mockUser);
-      setIsAuthenticated(true);
-      
-      return { success: true, user: mockUser };
+      // The onAuthStateChanged listener will handle setting user state
+      return { success: true, user: userData };
     } catch (error) {
-      console.error('Login error:', error);
-      throw new Error('Login failed');
+      console.error('❌ Login error details:', {
+        code: error.code,
+        message: error.message,
+        customData: error.customData
+      });
+      
+      // Handle specific Firebase auth errors
+      let errorMessage = 'Login failed. Please try again.';
+      
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email address. Please check your email or create a new account.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled. Please contact support.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed attempts. Please try again later.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection.';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password. Please check your credentials.';
+          break;
+        case 'auth/missing-password':
+          errorMessage = 'Please enter your password.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please choose a stronger password.';
+          break;
+        default:
+          errorMessage = error.message || 'Login failed. Please try again.';
+      }
+      
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signup = async (userData) => {
     try {
-      // Simulate API call
-      console.log('Signing up with:', userData);
+      setIsLoading(true);
+      const { name, email, password } = userData;
       
-      // Mock registration - replace with real API call
-      const mockUser = {
-        id: Date.now(),
-        name: userData.name,
-        email: userData.email
+      // Create user with Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      // Update the user's display name
+      await updateProfile(firebaseUser, {
+        displayName: name
+      });
+      
+      const newUserData = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: name,
+        photoURL: firebaseUser.photoURL,
+        emailVerified: firebaseUser.emailVerified
       };
       
-      const mockToken = 'mock-jwt-token';
-      
-      // Save to localStorage
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('token', mockToken);
-      
-      setUser(mockUser);
-      setIsAuthenticated(true);
-      
-      return { success: true, user: mockUser };
+      // The onAuthStateChanged listener will handle setting user state
+      return { success: true, user: newUserData };
     } catch (error) {
       console.error('Signup error:', error);
-      throw new Error('Signup failed');
+      
+      // Handle specific Firebase auth errors
+      let errorMessage = 'Account creation failed. Please try again.';
+      
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'An account with this email address already exists.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please choose a stronger password.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Account creation is currently disabled.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your connection.';
+          break;
+        default:
+          errorMessage = error.message || 'Account creation failed. Please try again.';
+      }
+      
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      // The onAuthStateChanged listener will handle clearing user state
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw new Error('Failed to logout. Please try again.');
+    }
   };
 
   const value = {

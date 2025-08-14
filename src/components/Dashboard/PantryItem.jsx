@@ -35,7 +35,7 @@ const PantryItem = ({ item, onEdit, onDelete }) => {
   };
 
   return (
-    <div className="pantry-item">
+    <div className={`pantry-item ${getExpiryStatus(item.expiryDate)}`}>
       <div className="item-header">
         <h3 className="item-name">{item.name}</h3>
         <span className="item-category">{item.category}</span>

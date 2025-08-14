@@ -905,16 +905,6 @@ body {
   color: #4285f4;
 }
 
-.social-btn-creative.github:hover {
-  border-color: #333;
-  color: #333;
-}
-
-.social-icon {
-  display: flex;
-  align-items: center;
-}
-
 /* ============================================
    FOOTERS
    ============================================ */
