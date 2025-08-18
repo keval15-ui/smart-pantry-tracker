@@ -4,9 +4,11 @@ import {
   createUserWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext();
@@ -212,13 +214,109 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      setIsLoading(true);
+      console.log('🔐 Attempting Google sign-in...');
+      
+      // Create Google Auth Provider
+      const provider = new GoogleAuthProvider();
+      
+      // Add additional scopes if needed
+      provider.addScope('email');
+      provider.addScope('profile');
+      
+      // Set custom parameters
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      // Sign in with popup
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+      
+      console.log('✅ Google sign-in successful:', {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: firebaseUser.displayName
+      });
+      
+      // Check if user document exists, if not create it
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (!userDocSnap.exists()) {
+        // Create user document in Firestore for new Google users
+        await setDoc(userDocRef, {
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
+          provider: 'google',
+          createdAt: serverTimestamp(),
+          preferences: {
+            notifications: {
+              expiry: true,
+              newItems: false
+            },
+            defaultLocation: 'Pantry',
+            theme: 'light'
+          }
+        });
+        console.log('📄 Created new user document for Google user');
+      } else {
+        console.log('📄 User document already exists');
+      }
+      
+      const userData = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+        photoURL: firebaseUser.photoURL,
+        emailVerified: firebaseUser.emailVerified,
+        provider: 'google'
+      };
+      
+      // The onAuthStateChanged listener will handle setting user state
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('❌ Google sign-in error:', error);
+      
+      let errorMessage = 'Google sign-in failed. Please try again.';
+      
+      switch (error.code) {
+        case 'auth/popup-closed-by-user':
+          errorMessage = 'Sign-in was cancelled. Please try again.';
+          break;
+        case 'auth/popup-blocked':
+          errorMessage = 'Pop-up was blocked by your browser. Please allow pop-ups and try again.';
+          break;
+        case 'auth/account-exists-with-different-credential':
+          errorMessage = 'An account already exists with this email address but with different sign-in credentials.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many requests. Please try again later.';
+          break;
+        default:
+          errorMessage = error.message || 'Google sign-in failed. Please try again.';
+      }
+      
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
     isLoading,
     login,
     signup,
-    logout
+    logout,
+    signInWithGoogle
   };
 
   return (
