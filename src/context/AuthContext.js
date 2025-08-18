@@ -6,7 +6,8 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext();
 
@@ -131,6 +132,8 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       const { name, email, password } = userData;
       
+      console.log('🔐 Attempting signup for:', email);
+      
       // Create user with Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
@@ -140,6 +143,21 @@ export const AuthProvider = ({ children }) => {
         displayName: name
       });
       
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', firebaseUser.uid), {
+        name: name,
+        email: email,
+        createdAt: serverTimestamp(),
+        preferences: {
+          notifications: {
+            expiry: true,
+            newItems: false
+          },
+          defaultLocation: 'Pantry',
+          theme: 'light'
+        }
+      });
+      
       const newUserData = {
         uid: firebaseUser.uid,
         email: firebaseUser.email,
@@ -147,6 +165,8 @@ export const AuthProvider = ({ children }) => {
         photoURL: firebaseUser.photoURL,
         emailVerified: firebaseUser.emailVerified
       };
+      
+      console.log('✅ Signup successful:', newUserData);
       
       // The onAuthStateChanged listener will handle setting user state
       return { success: true, user: newUserData };

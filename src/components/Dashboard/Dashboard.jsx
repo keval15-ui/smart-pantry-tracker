@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.js';
+import { pantryService } from '../../services/database.js';
 import PantryItem from './PantryItem';
 import AddItem from './AddItem';
+import EditItem from './EditItem';
 import '../../styles/dashboard.css';
 
 const Dashboard = () => {
@@ -9,6 +11,9 @@ const Dashboard = () => {
   const [pantryItems, setPantryItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddItem, setShowAddItem] = useState(false);
+  const [showEditItem, setShowEditItem] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     totalItems: 0,
     expiringSoon: 0,
@@ -16,70 +21,69 @@ const Dashboard = () => {
     expired: 0
   });
 
-  // Mock data for demonstration
+  // Load pantry items from database
   useEffect(() => {
-    const mockItems = [
-      {
-        id: 1,
-        name: 'Organic Apples',
-        category: 'Fruits',
-        quantity: 8,
-        unit: 'pcs',
-        expiryDate: '2025-08-15',
-        location: 'Refrigerator'
-      },
-      {
-        id: 2,
-        name: 'Whole Milk',
-        category: 'Dairy',
-        quantity: 1,
-        unit: 'L',
-        expiryDate: '2025-08-14',
-        location: 'Refrigerator'
-      },
-      {
-        id: 3,
-        name: 'Brown Rice',
-        category: 'Grains',
-        quantity: 2,
-        unit: 'kg',
-        expiryDate: '2025-12-30',
-        location: 'Pantry'
-      },
-      {
-        id: 4,
-        name: 'Old Bread',
-        category: 'Bakery',
-        quantity: 1,
-        unit: 'loaf',
-        expiryDate: '2025-01-01', // Expired for demo
-        location: 'Pantry'
-      }
-    ];
-
-    setTimeout(() => {
-      setPantryItems(mockItems);
+    const loadPantryItems = async () => {
+      if (!user?.uid) return;
       
-      setStats({
-        totalItems: mockItems.length,
-        expiringSoon: mockItems.filter(item => {
-          const days = Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-          return days <= 7 && days >= 0;
-        }).length,
-        expired: mockItems.filter(item => {
-          const days = Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-          return days < 0;
-        }).length,
-        categories: new Set(mockItems.map(item => item.category)).size
-      });
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const items = await pantryService.getItems(user.uid);
+        setPantryItems(items);
+        updateStats(items);
+      } catch (error) {
+        console.error('Failed to load pantry items:', error);
+        setError('Failed to load your pantry items. Please try refreshing the page.');
+        
+        // Fallback to mock data for development
+        const mockItems = [
+          {
+            id: 'mock-1',
+            name: 'Organic Apples',
+            category: 'Fruits',
+            quantity: 8,
+            unit: 'pcs',
+            expiryDate: '2025-08-15',
+            location: 'Refrigerator'
+          },
+          {
+            id: 'mock-2',
+            name: 'Whole Milk',
+            category: 'Dairy',
+            quantity: 1,
+            unit: 'L',
+            expiryDate: '2025-08-14',
+            location: 'Refrigerator'
+          }
+        ];
+        setPantryItems(mockItems);
+        updateStats(mockItems);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleAddItem = (newItem) => {
-    setPantryItems(prevItems => [...prevItems, newItem]);
-    updateStats([...pantryItems, newItem]);
-    console.log('Added item:', newItem);
+    loadPantryItems();
+  }, [user?.uid]);
+
+  const handleAddItem = async (newItem) => {
+    try {
+      setError(null);
+      
+      const addedItem = await pantryService.addItem(user.uid, newItem);
+      const updatedItems = [...pantryItems, addedItem];
+      
+      setPantryItems(updatedItems);
+      updateStats(updatedItems);
+      
+      console.log('Added item:', addedItem);
+    } catch (error) {
+      console.error('Failed to add item:', error);
+      setError('Failed to add item. Please try again.');
+      throw error; // Re-throw to handle in AddItem component
+    }
   };
 
   const updateStats = (items) => {
@@ -97,17 +101,57 @@ const Dashboard = () => {
     });
   };
 
-  const handleEditItem = (item) => {
+  const handleEditItem = async (item) => {
     console.log('Edit item:', item);
-    // Add edit functionality here
+    setEditingItem(item);
+    setShowEditItem(true);
   };
 
-  const handleDeleteItem = (itemId) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      const updatedItems = pantryItems.filter(item => item.id !== itemId);
+  const handleSaveEdit = async (itemId, updatedData) => {
+    try {
+      setError(null);
+      
+      await pantryService.updateItem(itemId, updatedData);
+      
+      // Update the local state
+      const updatedItems = pantryItems.map(item => 
+        item.id === itemId 
+          ? { ...item, ...updatedData }
+          : item
+      );
+      
       setPantryItems(updatedItems);
       updateStats(updatedItems);
-      console.log('Delete item:', itemId);
+      
+      console.log('Updated item:', itemId, updatedData);
+    } catch (error) {
+      console.error('Failed to update item:', error);
+      setError('Failed to update item. Please try again.');
+      throw error; // Re-throw to handle in EditItem component
+    }
+  };
+
+  const handleCloseEdit = () => {
+    setShowEditItem(false);
+    setEditingItem(null);
+  };
+
+  const handleDeleteItem = async (itemId) => {
+    if (window.confirm('Are you sure you want to delete this item?')) {
+      try {
+        setError(null);
+        
+        await pantryService.deleteItem(itemId);
+        const updatedItems = pantryItems.filter(item => item.id !== itemId);
+        
+        setPantryItems(updatedItems);
+        updateStats(updatedItems);
+        
+        console.log('Deleted item:', itemId);
+      } catch (error) {
+        console.error('Failed to delete item:', error);
+        setError('Failed to delete item. Please try again.');
+      }
     }
   };
 
@@ -150,6 +194,20 @@ const Dashboard = () => {
       
       <main className="dashboard-main">
         <div className="dashboard-content">
+          {/* Error Message */}
+          {error && (
+            <div className="error-banner">
+              <span className="error-icon">⚠️</span>
+              <span>{error}</span>
+              <button 
+                onClick={() => setError(null)}
+                className="error-close"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="loading-section">
               <div className="spinner"></div>
@@ -198,36 +256,15 @@ const Dashboard = () => {
                     <span className="action-text">Scan Barcode</span>
                   </button>
                   <button className="action-card">
-                    <span className="action-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                        <path d="m9 16 2 2 4-4"></path>
-                      </svg>
-                    </span>
+                    <span className="action-icon">👀</span>
                     <span className="action-text">View All Items</span>
                   </button>
                   <button className="action-card">
-                    <span className="action-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14,2 14,8 20,8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10,9 9,9 8,9"></polyline>
-                      </svg>
-                    </span>
+                    <span className="action-icon">📊</span>
                     <span className="action-text">Generate Report</span>
                   </button>
                   <button className="action-card">
-                    <span className="action-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                      </svg>
-                    </span>
+                    <span className="action-icon">🔔</span>
                     <span className="action-text">Notifications</span>
                   </button>
                 </div>
@@ -272,6 +309,15 @@ const Dashboard = () => {
         <AddItem
           onClose={() => setShowAddItem(false)}
           onAdd={handleAddItem}
+        />
+      )}
+
+      {/* Edit Item Modal */}
+      {showEditItem && editingItem && (
+        <EditItem
+          item={editingItem}
+          onClose={handleCloseEdit}
+          onSave={handleSaveEdit}
         />
       )}
     </div>
