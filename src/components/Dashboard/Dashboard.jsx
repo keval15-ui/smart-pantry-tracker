@@ -4,6 +4,7 @@ import { pantryService } from '../../services/database.js';
 import PantryItem from './PantryItem';
 import AddItem from './AddItem';
 import EditItem from './EditItem';
+import ViewAllItems from './ViewAllItems';
 import '../../styles/dashboard.css';
 
 const Dashboard = () => {
@@ -13,6 +14,7 @@ const Dashboard = () => {
   const [showAddItem, setShowAddItem] = useState(false);
   const [showEditItem, setShowEditItem] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [showViewAll, setShowViewAll] = useState(false);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     totalItems: 0,
@@ -24,13 +26,18 @@ const Dashboard = () => {
   // Load pantry items from database
   useEffect(() => {
     const loadPantryItems = async () => {
-      if (!user?.uid) return;
+      if (!user?.uid) {
+        console.log('Dashboard: No user ID available');
+        return;
+      }
       
       try {
         setIsLoading(true);
         setError(null);
+        console.log('Dashboard: Loading items for user:', user.uid);
         
         const items = await pantryService.getItems(user.uid);
+        console.log('Dashboard: Loaded items:', items);
         setPantryItems(items);
         updateStats(items);
       } catch (error) {
@@ -255,7 +262,10 @@ const Dashboard = () => {
                     <span className="action-icon">📱</span>
                     <span className="action-text">Scan Barcode</span>
                   </button>
-                  <button className="action-card">
+                  <button 
+                    className="action-card"
+                    onClick={() => setShowViewAll(true)}
+                  >
                     <span className="action-icon">👀</span>
                     <span className="action-text">View All Items</span>
                   </button>
@@ -318,6 +328,13 @@ const Dashboard = () => {
           item={editingItem}
           onClose={handleCloseEdit}
           onSave={handleSaveEdit}
+        />
+      )}
+
+      {/* View All Items Modal */}
+      {showViewAll && (
+        <ViewAllItems
+          onClose={() => setShowViewAll(false)}
         />
       )}
     </div>
